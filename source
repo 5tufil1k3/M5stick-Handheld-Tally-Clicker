@@ -1,0 +1,76 @@
+#include <M5StickCPlus.h>
+
+int tallyCount = 0;
+unsigned long lastButtonPressA = 0;
+unsigned long lastButtonPressB = 0;
+const int debounceDelay = 300; // Milliseconds for debounce
+
+void setup() {
+  M5.begin();
+  M5.Lcd.setRotation(1); // Portrait orientation
+  M5.Lcd.fillScreen(BLACK);  // Set the background to black
+  
+  // Set up the count display
+  updateCountDisplay();
+}
+
+void loop() {
+  M5.update();
+
+  // Increment counter when Button A is pressed with debounce
+  if (M5.BtnA.isPressed() && (millis() - lastButtonPressA) > debounceDelay) {
+    tallyCount++;
+    if (tallyCount > 9999) {
+      tallyCount = 0; // Reset after 9999
+    }
+    updateCountDisplay();  // Update the count display
+    lastButtonPressA = millis();
+  }
+  
+  // Reset counter when Button B is pressed with debounce
+  if (M5.BtnB.isPressed() && (millis() - lastButtonPressB) > debounceDelay) {
+    tallyCount = 0;
+    updateCountDisplay();  // Update the count display
+    lastButtonPressB = millis();
+  }
+}
+
+void updateCountDisplay() {
+  // Ensure the counter is always displayed as a 4-digit number
+  String countStr = String(tallyCount);
+  
+  // If less than 4 digits, pad with leading zeros
+  while (countStr.length() < 4) {
+    countStr = "0" + countStr;
+  }
+
+  // Set font size for large display
+  M5.Lcd.setTextSize(4);  // Large font to fit the numbers inside the boxes
+  
+  // Clear the previous count display
+  M5.Lcd.fillRect(10, 40, 240, 100, BLACK);  // Clear the display area (make sure it's wide enough)
+
+  // Calculate the total width and start position
+  int boxWidth = 50; // Width of each box
+  int boxHeight = 70; // Height of each box
+  int spaceBetweenBoxes = 0; // Space between boxes
+  int totalWidth = (boxWidth * 4) + (spaceBetweenBoxes * 3); // Total width for all 4 boxes and spaces
+  
+  // Centering the boxes horizontally
+  int startX = (M5.Lcd.width() - totalWidth) / 2;
+  
+  // Adjust Y position to move the boxes higher up
+  int startY = 30; // Starting Y position for the boxes (adjusted to move them higher)
+
+  // Position the digits in grid format [0][0][0][0]
+  for (int i = 0; i < 4; i++) {
+    // Draw a box around each digit
+    M5.Lcd.drawRect(startX, startY, boxWidth, boxHeight, WHITE);  // Draw each box (60x80)
+    
+    // Position each digit inside the box
+    M5.Lcd.setCursor(startX + 20, startY + 20);  // Center the digit inside the box (adjusted x, y position)
+    M5.Lcd.print(countStr[i]);
+    
+    startX += boxWidth + spaceBetweenBoxes;  // Move to the next box (space between boxes)
+  }
+}
